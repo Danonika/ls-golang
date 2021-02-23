@@ -131,7 +131,19 @@ func Parse(path string, cut_path int) {
 
 	tmp_arr, err := f.Readdir(-1) // <- Read all files
 	dir, _ := f.Stat()
+	_, err2 := os.Readlink(path)
+	dd2, _ := os.Lstat(path)
+	if dir.IsDir() && err2 == nil {
+		pp := path
+		if len(pp) > 0 && pp[len(pp)-1] == '/' { // <- removing useless '/'
+			pp = pp[:len(pp)-1]
+		}
+		tmp := strings.Split(pp, "/")
+		pp = strings.Join(tmp[:len(tmp)-1], "/")
 
+		printLsL(dd2, dd2.Name(), pp)
+		return
+	}
 	if !dir.IsDir() { // if file is not dir
 		if ok2 == 1 { // <- special output format in ls
 			fmt.Println()
@@ -141,7 +153,16 @@ func Parse(path string, cut_path int) {
 			fmt.Println()
 		}
 		if is_l {
-			printLsL(dir, path[cut_path+1:], path)
+			if err2 == nil {
+				dir = dd2
+			}
+			pp := path
+			if len(pp) > 0 && pp[len(pp)-1] == '/' { // <- removing useless '/'
+				pp = pp[:len(pp)-1]
+			}
+			tmp := strings.Split(pp, "/")
+			pp = strings.Join(tmp[:len(tmp)-1], "/")
+			printLsL(dir, dir.Name(), pp)
 		} else {
 			s := fmt.Sprintf(format, data.GetColor(dir), path[cut_path+1:])
 			if ok2 == 2 {
@@ -217,7 +238,9 @@ func Parse(path string, cut_path int) {
 
 		data.Max(&mx_blocks, data.NumberLen(int(stat.Nlink)))
 		data.Max(&mx_bytes, data.NumberLen(int(stat.Size)))
+
 		total += stat.Blocks
+
 		data.Max(&mx_minor, data.NumberLen(int(data.CountDivision(stat.Rdev))))
 		data.Max(&mx_major, data.NumberLen(int(data.CountMod(stat.Rdev))))
 
